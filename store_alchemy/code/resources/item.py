@@ -33,7 +33,7 @@ class Item(Resource):
         item = ItemModel(name, data['price'])
 
         try:
-            item.insert()
+            item.save_to_db()
         except:
             return {"message": "An error occurred inserting the item"}, 500 # Internal server error
 
@@ -48,32 +48,23 @@ class Item(Resource):
         """
         data = Item.parser.parse_args()
         item = ItemModel.find_by_name(name)
-        updated_item = ItemModel(name, data['price'])
 
         if item is None:
-            try:
-                updated_item.insert()
-            except:
-                return {'message': 'An error occurred'}, 500
+            item = ItemModel(name, data['price'])
         else:
-            try:
-                updated_item.update()
-            except:
-                return {'message': 'An error occurred'}, 500
-        return updated_item.json()
+            item.price = data['price']
+
+        item.save_to_db()
+
+        return item.json()
 
     def delete(self, name):
         """
         Delete an item from the items
         Return message if successful
         """
-        connection = sqlite3.connect('data.db')
-        cursor = connection.cursor()
-
-        query = "DELETE FROM items WHERE name=?"
-        cursor.execute(query, (name,))
-        connection.commit()
-        connection.close()
+        item = ItemModel.find_by_name(name)
+        item.delete_from_db()
 
         return {'message': 'Item deleted'}
 
@@ -89,7 +80,7 @@ class ItemList(Resource):
 
         items = []
         for row in result:
-            items.append({'name': row[0], 'price': row[1]})
+            items.append({'name': row[1], 'price': row[2]})
 
         connection.close()
         return {'items': items}

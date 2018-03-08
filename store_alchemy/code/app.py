@@ -8,6 +8,11 @@ from resources.item import Item, ItemList
 
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
+# Turn off Flask SQLAlchemy mod tracker
+# Underlying SQLAlchemy mod tracker is still enabled and works better
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 app.secret_key = 'jose'
 api = Api(app)
 
@@ -23,4 +28,6 @@ api.add_resource(ItemList, '/items') # http://127.0.0.1/items
 api.add_resource(UserRegister, '/register') # http://127.0.0.1/register
 
 if __name__ == '__main__':
+    from db import db
+    db.init_app(app)
     app.run(port=5000, debug=True)
