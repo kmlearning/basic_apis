@@ -1,32 +1,29 @@
 from db import db
 
-class ItemModel(db.Model):
-    __tablename__ = 'items'
+class StoreModel(db.Model):
+    __tablename__ = 'stores'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    price = db.Column(db.Float(precision=2))
-    store_id = db.Column(db.Integer, db.ForeignKey('stores.id'))
-    store = db.relationship('StoreModel')
+    items = db.relationship('ItemModel', lazy = 'dynamic')
 
-    def __init__(self, name, price, store_id):
+    def __init__(self, name):
         self.name = name
-        self.price = price
 
     def json(self):
-        return {'name': self.name, 'price': self.price}
+        return {'name': self.name, 'items': [item.json() for item in self.items.all()]}
 
     @classmethod
     def find_by_name(cls, name):
-        """ Find item in db from name """
+        """ Find store in db from name """
         return cls.query.filter_by(name=name).first() # SELECT * FROM items WHERE name=name LIMIT 1
 
     def save_to_db(self):
-        """ Upsert item to db """
+        """ Upsert store to db """
         db.session.add(self)
         db.session.commit()
         
     def delete_from_db(self):
-        """ Delete item from db """
+        """ Delete store from db """
         db.session.delete(self)
         db.session.commit()

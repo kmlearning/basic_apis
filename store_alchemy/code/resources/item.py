@@ -1,4 +1,3 @@
-import sqlite3
 from flask_restful import Resource, reqparse
 from flask_jwt import jwt_required
 
@@ -12,6 +11,12 @@ class Item(Resource):
         required=True,
         help="This field cannot be left blank"
     )
+    parser.add_argument('store_id', 
+        type=int,
+        required=True,
+        help="Store cannot be left blank"
+    )
+
 
     @jwt_required()
     def get(self, name):
@@ -30,7 +35,7 @@ class Item(Resource):
             return {"message": "An item with name {} already exists".format(name)}, 400
 
         data = Item.parser.parse_args()
-        item = ItemModel(name, data['price'])
+        item = ItemModel(name, **data)
 
         try:
             item.save_to_db()
@@ -50,9 +55,10 @@ class Item(Resource):
         item = ItemModel.find_by_name(name)
 
         if item is None:
-            item = ItemModel(name, data['price'])
+            item = ItemModel(name, **data)
         else:
             item.price = data['price']
+            item.store_id = data['store_id']
 
         item.save_to_db()
 
@@ -72,15 +78,5 @@ class ItemList(Resource):
     
     def get(self):
         """ Returns all items """
-        connection = sqlite3.connect('data.db')
-        cursor = connection.cursor()
+        return {'items': [item.json() for item in ItemModel.query.all()]}
 
-        query = "SELECT * FROM items"
-        result = cursor.execute(query)
-
-        items = []
-        for row in result:
-            items.append({'name': row[1], 'price': row[2]})
-
-        connection.close()
-        return {'items': items}
